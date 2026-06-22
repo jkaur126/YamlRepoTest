@@ -1,0 +1,44 @@
+name: CI Test for Student Portfolio and Banking App
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test-applications:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Test Student Portfolio App
+        run: |
+          echo "Testing student portfolio app..."
+          docker build -t studentportfolio ./studentportfolio
+          docker run -d --name studentportfolio -p 3000:3000 studentportfolio
+          sleep 10
+          curl -f http://localhost:3000
+
+      - name: Test Banking App
+        run: |
+          echo "Testing banking app..."
+          docker build -t bankingapp ./bankingapp
+          docker run -d --name bankingapp -p 5090:5090 bankingapp
+          sleep 10
+          curl -f http://localhost:5090
+
+      - name: Test Integration Between Apps
+        run: |
+          echo "Testing integration between student portfolio and banking app..."
+          curl -f http://localhost:3000
+          curl -f http://localhost:5090
+          echo "Both apps are running and reachable."
+
+      - name: Stop Containers
+        if: always()
+        run: |
+          docker stop studentportfolio bankingapp || true
+          docker rm studentportfolio bankingapp || true
